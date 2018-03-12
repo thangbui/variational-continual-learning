@@ -11,7 +11,8 @@ def merge_coresets(x_coresets, y_coresets):
         merged_y = np.vstack((merged_y, y_coresets[i]))
     return merged_x, merged_y
 
-def get_scores(model, x_testsets, y_testsets, x_coresets, y_coresets, hidden_size, no_epochs, single_head, batch_size=None):
+def get_scores(model, x_testsets, y_testsets, x_coresets, y_coresets, 
+               hidden_size, no_epochs, single_head, batch_size=None):
     mf_weights, mf_variances = model.get_weights()
     acc = []
 
@@ -19,7 +20,9 @@ def get_scores(model, x_testsets, y_testsets, x_coresets, y_coresets, hidden_siz
         if len(x_coresets) > 0:
             x_train, y_train = merge_coresets(x_coresets, y_coresets)
             bsize = x_train.shape[0] if (batch_size is None) else batch_size
-            final_model = MFVI_NN(x_train.shape[1], hidden_size, y_train.shape[1], x_train.shape[0], prev_means=mf_weights, prev_log_variances=mf_variances)
+            final_model = MFVI_NN(
+                x_train.shape[1], hidden_size, y_train.shape[1], x_train.shape[0], 
+                prev_means=mf_weights, prev_log_variances=mf_variances)
             final_model.train(x_train, y_train, 0, no_epochs, bsize)
         else:
             final_model = model
@@ -29,7 +32,9 @@ def get_scores(model, x_testsets, y_testsets, x_coresets, y_coresets, hidden_siz
             if len(x_coresets) > 0:
                 x_train, y_train = x_coresets[i], y_coresets[i]
                 bsize = x_train.shape[0] if (batch_size is None) else batch_size
-                final_model = MFVI_NN(x_train.shape[1], hidden_size, y_train.shape[1], x_train.shape[0], prev_means=mf_weights, prev_log_variances=mf_variances)
+                final_model = MFVI_NN(
+                    x_train.shape[1], hidden_size, y_train.shape[1], x_train.shape[0], 
+                    prev_means=mf_weights, prev_log_variances=mf_variances)
                 final_model.train(x_train, y_train, i, no_epochs, bsize)
             else:
                 final_model = model
