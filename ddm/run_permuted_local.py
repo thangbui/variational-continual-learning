@@ -8,6 +8,8 @@ import vcl
 import coreset
 import utils
 from copy import deepcopy
+import pickle
+import pdb
 
 class PermutedMnistGenerator():
     def __init__(self, max_iter=10):
@@ -49,46 +51,55 @@ class PermutedMnistGenerator():
             return next_x_train, next_y_train, next_x_test, next_y_test
 
 # hidden_size = [100, 100]
-# batch_size = 256
-hidden_size = [100]
 batch_size = 500
-no_epochs = 100
+hidden_size = [100]
+no_epochs = 150
 single_head = True
 num_tasks = 5
+coreset_size = 200
+num_iters = 1
 
-# # Run vanilla VCL
-# tf.set_random_seed(12)
-# np.random.seed(1)
-
-# coreset_size = 0
-# data_gen = PermutedMnistGenerator(num_tasks)
-# vcl_result = vcl.run_vcl(hidden_size, no_epochs, data_gen, 
-#     coreset.rand_from_batch, coreset_size, batch_size, single_head)
-# print vcl_result
-
-# Run random coreset VCL
 tf.reset_default_graph()
 tf.set_random_seed(12)
 np.random.seed(1)
 
-coreset_size = 200
-data_gen = PermutedMnistGenerator(num_tasks)
-rand_vcl_result = vcl.run_vcl_local(hidden_size, no_epochs, data_gen, 
-    coreset.rand_from_batch, coreset_size, batch_size, single_head)
-print rand_vcl_result
+if len(sys.argv) == 2:
+    option = int(sys.argv[1])
+else:
+    option = 4
 
-# # Run k-center coreset VCL
-# tf.reset_default_graph()
-# tf.set_random_seed(12)
-# np.random.seed(1)
+if option == 1:
+    # Run vanilla VCL
+    coreset_size = 0
+    data_gen = PermutedMnistGenerator(num_tasks)
+    vcl_result = vcl.run_vcl_local(hidden_size, no_epochs, data_gen, 
+        coreset.rand_from_batch, coreset_size, batch_size, single_head, num_iters)
+    print vcl_result
+    pickle.dump(vcl_result, open('results/vcl_result_%d.pkl'%num_iters, 'wb'), pickle.HIGHEST_PROTOCO)
 
-# data_gen = PermutedMnistGenerator(num_tasks)
-# kcen_vcl_result = vcl.run_vcl(hidden_size, no_epochs, data_gen, 
-#     coreset.k_center, coreset_size, batch_size, single_head)
-# print kcen_vcl_result
+elif option == 2:
+    # Run random coreset VCL
+    data_gen = PermutedMnistGenerator(num_tasks)
+    rand_vcl_result = vcl.run_vcl_local(hidden_size, no_epochs, data_gen, 
+        coreset.rand_from_batch, coreset_size, batch_size, single_head, num_iters)
+    print rand_vcl_result
+    pickle.dump(rand_vcl_result, open('results/rand_vcl_result_%d.pkl'%num_iters, 'wb'), pickle.HIGHEST_PROTOCOL)
 
-# Plot average accuracy
-# vcl_avg = np.nanmean(vcl_result, 1)
-# rand_vcl_avg = np.nanmean(rand_vcl_result, 1)
-# kcen_vcl_avg = np.nanmean(kcen_vcl_result, 1)
-# utils.plot('results/permuted.jpg', vcl_avg, rand_vcl_avg, kcen_vcl_avg)
+elif option == 3:
+    # Run k-center coreset VCL
+    data_gen = PermutedMnistGenerator(num_tasks)
+    kcen_vcl_result = vcl.run_vcl_local(hidden_size, no_epochs, data_gen, 
+        coreset.k_center, coreset_size, batch_size, single_head, num_iters)
+    print kcen_vcl_result
+    pickle.dump(kcen_vcl_result, open('results/kcen_vcl_result_%d.pkl'%num_iters, 'wb'), pickle.HIGHEST_PROTOCOL)
+
+if option == 4:
+    # load result and plot
+    vcl_result = pickle.load(open('results/vcl_result.pkl_%d'%num_iters, 'rb'))
+    rand_vcl_result = pickle.load(open('results/rand_vcl_result_%d.pkl'%num_iters, 'rb'))
+    kcen_vcl_result = pickle.load(open('results/kcen_vcl_result_%d.pkl'%num_iters, 'rb'))
+    # Plot average accuracy
+    vcl_avg = np.nanmean(vcl_result, 1)
+    rand_vcl_avg = np.nanmean(rand_vcl_result, 1)
+    kcen_vcl_avg = np.nanmean(kcen_vcl_result, 1)
+    utils.plot('results/permuted_local_%d.pdf'%num_iters, vcl_avg, rand_vcl_avg, kcen_vcl_avg)

@@ -5,42 +5,6 @@ from copy import deepcopy
 np.random.seed(0)
 tf.set_random_seed(0)
 
-# variable initialization functions
-def weight_variable(shape, init_weights=None):
-    if init_weights is not None:
-        initial = tf.constant(init_weights)
-    else:
-        initial = tf.truncated_normal(shape, stddev=0.1)
-    return tf.Variable(initial)
-
-def bias_variable(shape):
-    initial = tf.constant(0.1, shape=shape)
-    return tf.Variable(initial)
-
-def small_variable(shape):
-    initial = tf.constant(-6.0, shape=shape)
-    return tf.Variable(initial)
-
-def zero_variable(shape):
-    initial = tf.zeros(shape=shape)
-    return tf.Variable(initial)
-
-def _create_weights_mf(in_dim, hidden_size, out_dim, init_weights=None, init_variances=None):
-    size = deepcopy(hidden_size)
-    size.append(out_dim)
-    size.insert(0, in_dim)
-    no_params = 0
-    for i in range(len(size) - 1):
-        no_weights = size[i] * size[i+1]
-        no_biases = size[i+1]
-        no_params += (no_weights + no_biases)
-    m_weights = weight_variable([no_params], init_weights)
-    if init_variances is None:
-        v_weights = small_variable([no_params])
-    else:
-        v_weights = tf.Variable(tf.constant(init_variances, dtype=tf.float32))
-    return no_params, m_weights, v_weights, size
-
 class Cla_NN(object):
     def __init__(self, input_size, hidden_size, output_size, training_size):
         # input and output placeholders
@@ -132,7 +96,8 @@ class Vanilla_NN(Cla_NN):
         act = inputs
         for i in range(self.no_layers-1):
             pre = tf.add(tf.matmul(act, self.W[i]), self.b[i])
-            act = tf.nn.relu(pre)
+            #act = tf.nn.relu(pre)
+            act = tf.nn.tanh(pre)
         pre = tf.add(tf.matmul(act, tf.gather(self.W_last, task_idx)), tf.gather(self.b_last, task_idx))
         return pre
 
@@ -192,12 +157,12 @@ class Vanilla_NN(Cla_NN):
 """ Bayesian Neural Network with Mean field VI approximation """
 class MFVI_NN(Cla_NN):
     def __init__(self, input_size, hidden_size, output_size, training_size, 
-        no_train_samples=10, no_pred_samples=100, prev_means=None, prev_log_variances=None, learning_rate=0.001, 
+        no_train_samples=10, no_pred_samples=100, prev_means=None, prev_log_variances=None, learning_rate=0.005,        init_means=None, init_log_variances=None, 
         prior_mean=0, prior_var=1):
 
         super(MFVI_NN, self).__init__(input_size, hidden_size, output_size, training_size)
         m, v, self.size = self.create_weights(
-            input_size, hidden_size, output_size, prev_means, prev_log_variances)
+            input_size, hidden_size, output_size, init_means, init_log_variances)
         self.W_m, self.b_m, self.W_last_m, self.b_last_m = m[0], m[1], m[2], m[3]
         self.W_v, self.b_v, self.W_last_v, self.b_last_v = v[0], v[1], v[2], v[3]
         self.weights = [m, v]
@@ -231,7 +196,8 @@ class MFVI_NN(Cla_NN):
             weights = tf.add(tf.multiply(eps_w, tf.exp(0.5*self.W_v[i])), self.W_m[i])
             biases = tf.add(tf.multiply(eps_b, tf.exp(0.5*self.b_v[i])), self.b_m[i])
             pre = tf.add(tf.einsum('mni,mio->mno', act, weights), biases)
-            act = tf.nn.relu(pre)
+            #act = tf.nn.relu(pre)
+            act = tf.nn.tanh(pre)
         din = self.size[-2]
         dout = self.size[-1]
         eps_w = tf.random_normal((K, din, dout), 0, 1, dtype=tf.float32)
@@ -313,14 +279,14 @@ class MFVI_NN(Cla_NN):
             if prev_weights is None:
                 Wi_m_val = tf.truncated_normal([din, dout], stddev=0.1)
                 bi_m_val = tf.truncated_normal([dout], stddev=0.1)
-                Wi_v_val = tf.constant(-6.0, shape=[din, dout])
-                bi_v_val = tf.constant(-6.0, shape=[dout])
+                Wi_v_val = tf.constant(-2.0, shape=[din, dout])
+                bi_v_val = tf.constant(-2.0, shape=[dout])
             else:
                 Wi_m_val = prev_weights[0][i]
                 bi_m_val = prev_weights[1][i]
                 if prev_variances is None:
-                    Wi_v_val = tf.constant(-6.0, shape=[din, dout])
-                    bi_v_val = tf.constant(-6.0, shape=[dout])
+                    Wi_v_val = tf.constant(-2.0, shape=[din, dout])
+                    bi_v_val = tf.constant(-2.0, shape=[dout])
                 else:
                     Wi_v_val = prev_variances[0][i]
                     bi_v_val = prev_variances[1][i]
@@ -334,7 +300,6 @@ class MFVI_NN(Cla_NN):
             W_v.append(Wi_v)
             b_v.append(bi_v)
 
-        # if there are previous tasks
         if prev_weights is not None and prev_variances is not None:
             prev_Wlast_m = prev_weights[2]
             prev_blast_m = prev_weights[3]
@@ -356,28 +321,6 @@ class MFVI_NN(Cla_NN):
                 b_last_m.append(bi_m)
                 W_last_v.append(Wi_v)
                 b_last_v.append(bi_v)
-
-        din = hidden_size[-2]
-        dout = hidden_size[-1]
-
-        # if point estimate is supplied
-        if prev_weights is not None and prev_variances is None:
-            Wi_m_val = prev_weights[2][0]
-            bi_m_val = prev_weights[3][0]
-        else:
-            Wi_m_val = tf.truncated_normal([din, dout], stddev=0.1)
-            bi_m_val = tf.truncated_normal([dout], stddev=0.1)
-        Wi_v_val = tf.constant(-6.0, shape=[din, dout])
-        bi_v_val = tf.constant(-6.0, shape=[dout])
-
-        Wi_m = tf.Variable(Wi_m_val)
-        bi_m = tf.Variable(bi_m_val)
-        Wi_v = tf.Variable(Wi_v_val)
-        bi_v = tf.Variable(bi_v_val)
-        W_last_m.append(Wi_m)
-        b_last_m.append(bi_m)
-        W_last_v.append(Wi_v)
-        b_last_v.append(bi_v)
             
         return [W_m, b_m, W_last_m, b_last_m], [W_v, b_v, W_last_v, b_last_v], hidden_size
 
@@ -432,15 +375,4 @@ class MFVI_NN(Cla_NN):
                 W_last_v.append(Wi_v)
                 b_last_v.append(bi_v)
 
-        din = hidden_size[-2]
-        dout = hidden_size[-1]
-        Wi_m = prior_mean
-        bi_m = prior_mean
-        Wi_v = prior_var
-        bi_v = prior_var
-        W_last_m.append(Wi_m)
-        b_last_m.append(bi_m)
-        W_last_v.append(Wi_v)
-        b_last_v.append(bi_v)
-            
         return [W_m, b_m, W_last_m, b_last_m], [W_v, b_v, W_last_v, b_last_v]
