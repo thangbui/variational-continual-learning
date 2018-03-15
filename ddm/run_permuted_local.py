@@ -57,7 +57,7 @@ no_epochs = 150
 single_head = True
 num_tasks = 5
 coreset_size = 200
-num_iters = 1
+num_iters = 3
 
 tf.reset_default_graph()
 tf.set_random_seed(12)
@@ -75,7 +75,7 @@ if option == 1:
     vcl_result = vcl.run_vcl_local(hidden_size, no_epochs, data_gen, 
         coreset.rand_from_batch, coreset_size, batch_size, single_head, num_iters)
     print vcl_result
-    pickle.dump(vcl_result, open('results/vcl_result_%d.pkl'%num_iters, 'wb'), pickle.HIGHEST_PROTOCO)
+    pickle.dump(vcl_result, open('results/vcl_result_%d.pkl'%num_iters, 'wb'), pickle.HIGHEST_PROTOCOL)
 
 elif option == 2:
     # Run random coreset VCL
@@ -95,7 +95,7 @@ elif option == 3:
 
 if option == 4:
     # load result and plot
-    vcl_result = pickle.load(open('results/vcl_result.pkl_%d'%num_iters, 'rb'))
+    vcl_result = pickle.load(open('results/vcl_result_%d.pkl'%num_iters, 'rb'))
     rand_vcl_result = pickle.load(open('results/rand_vcl_result_%d.pkl'%num_iters, 'rb'))
     kcen_vcl_result = pickle.load(open('results/kcen_vcl_result_%d.pkl'%num_iters, 'rb'))
     # Plot average accuracy
