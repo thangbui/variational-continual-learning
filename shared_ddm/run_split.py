@@ -53,9 +53,9 @@ class SplitMnistGenerator():
 
             return next_x_train, next_y_train, next_x_test, next_y_test
 
-hidden_size = [256, 256]
-batch_size = None
-no_epochs = 120
+hidden_size = [100]
+batch_size = 200
+no_epochs = 5
 
 # Run vanilla VCL
 tf.set_random_seed(12)
@@ -67,29 +67,29 @@ vcl_result = vcl.run_vcl_shared(hidden_size, no_epochs, data_gen,
     coreset.rand_from_batch, coreset_size, batch_size)
 print vcl_result
 
-# Run random coreset VCL
-tf.reset_default_graph()
-tf.set_random_seed(12)
-np.random.seed(1)
+# # Run random coreset VCL
+# tf.reset_default_graph()
+# tf.set_random_seed(12)
+# np.random.seed(1)
 
-coreset_size = 40
-data_gen = SplitMnistGenerator()
-rand_vcl_result = vcl.run_vcl_shared(hidden_size, no_epochs, data_gen, 
-    coreset.rand_from_batch, coreset_size, batch_size)
-print rand_vcl_result
+# coreset_size = 40
+# data_gen = SplitMnistGenerator()
+# rand_vcl_result = vcl.run_vcl_shared(hidden_size, no_epochs, data_gen, 
+#     coreset.rand_from_batch, coreset_size, batch_size)
+# print rand_vcl_result
 
-# Run k-center coreset VCL
-tf.reset_default_graph()
-tf.set_random_seed(12)
-np.random.seed(1)
+# # Run k-center coreset VCL
+# tf.reset_default_graph()
+# tf.set_random_seed(12)
+# np.random.seed(1)
 
-data_gen = SplitMnistGenerator()
-kcen_vcl_result = vcl.run_vcl_shared(hidden_size, no_epochs, data_gen, 
-    coreset.k_center, coreset_size, batch_size)
-print kcen_vcl_result
+# data_gen = SplitMnistGenerator()
+# kcen_vcl_result = vcl.run_vcl_shared(hidden_size, no_epochs, data_gen, 
+#     coreset.k_center, coreset_size, batch_size)
+# print kcen_vcl_result
 
-# Plot average accuracy
-vcl_avg = np.nanmean(vcl_result, 1)
-rand_vcl_avg = np.nanmean(rand_vcl_result, 1)
-kcen_vcl_avg = np.nanmean(kcen_vcl_result, 1)
-utils.plot('results/split.jpg', vcl_avg, rand_vcl_avg, kcen_vcl_avg)
+# # Plot average accuracy
+# vcl_avg = np.nanmean(vcl_result, 1)
+# rand_vcl_avg = np.nanmean(rand_vcl_result, 1)
+# kcen_vcl_avg = np.nanmean(kcen_vcl_result, 1)
+# utils.plot('results/split.jpg', vcl_avg, rand_vcl_avg, kcen_vcl_avg)
