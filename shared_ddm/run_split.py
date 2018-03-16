@@ -55,38 +55,47 @@ class SplitMnistGenerator():
 
 hidden_size = [100]
 batch_size = 200
-no_epochs = 5
+no_epochs = 100
+num_iters = 5
+coreset_size = 40
 
 # Run vanilla VCL
+tf.reset_default_graph()
 tf.set_random_seed(12)
 np.random.seed(1)
 
-coreset_size = 0
-data_gen = SplitMnistGenerator()
-vcl_result = vcl.run_vcl_shared(hidden_size, no_epochs, data_gen, 
-    coreset.rand_from_batch, coreset_size, batch_size)
-print vcl_result
 
-# # Run random coreset VCL
-# tf.reset_default_graph()
-# tf.set_random_seed(12)
-# np.random.seed(1)
+if len(sys.argv) == 2:
+    option = int(sys.argv[1])
+else:
+    option = 4
 
-# coreset_size = 40
-# data_gen = SplitMnistGenerator()
-# rand_vcl_result = vcl.run_vcl_shared(hidden_size, no_epochs, data_gen, 
-#     coreset.rand_from_batch, coreset_size, batch_size)
-# print rand_vcl_result
+if option == 1:
 
-# # Run k-center coreset VCL
-# tf.reset_default_graph()
-# tf.set_random_seed(12)
-# np.random.seed(1)
+    coreset_size = 0
+    data_gen = SplitMnistGenerator()
+    vcl_result = vcl.run_vcl_shared(hidden_size, no_epochs, data_gen, 
+        coreset.rand_from_batch, coreset_size, batch_size, no_iters=no_iters)
+    print vcl_result
+    pickle.dump(vcl_result, open('results/vcl_split_result_%d.pkl'%num_iters, 'wb'), pickle.HIGHEST_PROTOCOL)
 
-# data_gen = SplitMnistGenerator()
-# kcen_vcl_result = vcl.run_vcl_shared(hidden_size, no_epochs, data_gen, 
-#     coreset.k_center, coreset_size, batch_size)
-# print kcen_vcl_result
+elif option == 2:
+    # Run random coreset VCL
+    data_gen = SplitMnistGenerator()
+    rand_vcl_result = vcl.run_vcl_shared(hidden_size, no_epochs, data_gen, 
+        coreset.rand_from_batch, coreset_size, batch_size, no_iters=no_iters)
+    print rand_vcl_result
+    pickle.dump(rand_vcl_result, open('results/rand_vcl_split_result_%d.pkl'%num_iters, 'wb'), pickle.HIGHEST_PROTOCOL)
+
+
+elif option == 3:
+    # Run k-center coreset VCL
+    data_gen = SplitMnistGenerator()
+    kcen_vcl_result = vcl.run_vcl_shared(hidden_size, no_epochs, data_gen, 
+        coreset.k_center, coreset_size, batch_size, no_iters=no_iters)
+    print kcen_vcl_result
+    pickle.dump(kcen_vcl_result, open('results/kcen_vcl_split_result_%d.pkl'%num_iters, 'wb'), pickle.HIGHEST_PROTOCOL)
+
 
 # # Plot average accuracy
 # vcl_avg = np.nanmean(vcl_result, 1)
