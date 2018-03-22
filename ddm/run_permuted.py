@@ -9,6 +9,7 @@ import coreset
 import utils
 from copy import deepcopy
 
+#test
 class PermutedMnistGenerator():
     def __init__(self, max_iter=10):
         f = gzip.open('data/mnist.pkl.gz', 'rb')
