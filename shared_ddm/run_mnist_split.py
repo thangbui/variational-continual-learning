@@ -8,6 +8,7 @@ import vcl
 import coreset
 import utils
 from copy import deepcopy
+import pickle
 
 class SplitMnistGenerator():
     def __init__(self):
@@ -20,8 +21,10 @@ class SplitMnistGenerator():
         self.train_label = np.hstack((train_set[1], valid_set[1]))
         self.test_label = test_set[1]
 
-        self.sets_0 = [0, 2, 4, 6, 8]
-        self.sets_1 = [1, 3, 5, 7, 9]
+        # self.sets_0 = [0, 2, 4, 6, 8]
+        # self.sets_1 = [1, 3, 5, 7, 9]
+        self.sets_0 = [2, 8]
+        self.sets_1 = [3, 9]
         self.max_iter = len(self.sets_0)
         self.cur_iter = 0
 
@@ -53,10 +56,10 @@ class SplitMnistGenerator():
 
             return next_x_train, next_y_train, next_x_test, next_y_test
 
-hidden_size = [100]
-batch_size = 200
-no_epochs = 100
-num_iters = 5
+hidden_size = [256]
+batch_size = 256
+no_epochs = 120
+no_iters = 1
 coreset_size = 40
 
 # Run vanilla VCL
@@ -71,13 +74,12 @@ else:
     option = 4
 
 if option == 1:
-
     coreset_size = 0
     data_gen = SplitMnistGenerator()
     vcl_result = vcl.run_vcl_shared(hidden_size, no_epochs, data_gen, 
         coreset.rand_from_batch, coreset_size, batch_size, no_iters=no_iters)
     print vcl_result
-    pickle.dump(vcl_result, open('results/vcl_split_result_%d.pkl'%num_iters, 'wb'), pickle.HIGHEST_PROTOCOL)
+    pickle.dump(vcl_result, open('results/vcl_split_result_%d.pkl'%no_iters, 'wb'), pickle.HIGHEST_PROTOCOL)
 
 elif option == 2:
     # Run random coreset VCL
@@ -85,7 +87,7 @@ elif option == 2:
     rand_vcl_result = vcl.run_vcl_shared(hidden_size, no_epochs, data_gen, 
         coreset.rand_from_batch, coreset_size, batch_size, no_iters=no_iters)
     print rand_vcl_result
-    pickle.dump(rand_vcl_result, open('results/rand_vcl_split_result_%d.pkl'%num_iters, 'wb'), pickle.HIGHEST_PROTOCOL)
+    pickle.dump(rand_vcl_result, open('results/rand_vcl_split_result_%d.pkl'%no_iters, 'wb'), pickle.HIGHEST_PROTOCOL)
 
 
 elif option == 3:
@@ -94,7 +96,7 @@ elif option == 3:
     kcen_vcl_result = vcl.run_vcl_shared(hidden_size, no_epochs, data_gen, 
         coreset.k_center, coreset_size, batch_size, no_iters=no_iters)
     print kcen_vcl_result
-    pickle.dump(kcen_vcl_result, open('results/kcen_vcl_split_result_%d.pkl'%num_iters, 'wb'), pickle.HIGHEST_PROTOCOL)
+    pickle.dump(kcen_vcl_result, open('results/kcen_vcl_split_result_%d.pkl'%no_iters, 'wb'), pickle.HIGHEST_PROTOCOL)
 
 
 # # Plot average accuracy

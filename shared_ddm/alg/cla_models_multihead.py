@@ -41,7 +41,7 @@ def _unpack_weights(m, v, size):
 class MFVI_NN(object):
     def __init__(
             self, lower_size, upper_sizes, 
-            no_train_samples=20, no_test_samples=100):
+            no_train_samples=10, no_test_samples=100):
         self.lower_size = lower_size
         self.no_tasks = len(upper_sizes)
         self.upper_sizes = upper_sizes
@@ -144,7 +144,7 @@ class MFVI_NN(object):
                     feed_dict=feed_dict)
                 # Compute average loss
                 avg_cost += c / total_batch
-                print i, total_batch, c
+                # print i, total_batch, c
             # Display logs per epoch step
             if epoch % display_epoch == 0:
                 print("Epoch:", '%04d' % (epoch+1), "cost=", \
@@ -183,13 +183,13 @@ class MFVI_NN(object):
         return res
 
     def assign_weights(self, task_idx, lower_weights, upper_weights, 
-        transform_fnc=np.log):
+        lower_transform=np.log, upper_transform=np.log):
         lower_net = self.lower_net
         self.sess.run(
             [lower_net.assign_m_op, lower_net.assign_v_op],
             feed_dict={
                 lower_net.new_m: lower_weights[0], 
-                lower_net.new_v: transform_fnc(lower_weights[1])})
+                lower_net.new_v: lower_transform(lower_weights[1])})
 
         if not isinstance(task_idx, (list,)):
             task_idx = [task_idx]
@@ -201,7 +201,7 @@ class MFVI_NN(object):
                 [upper_net.assign_m_op, upper_net.assign_v_op],
                 feed_dict={
                     upper_net.new_m: upper_weights[i][0], 
-                    upper_net.new_v: transform_fnc(upper_weights[i][1])})
+                    upper_net.new_v: upper_transform(upper_weights[i][1])})
 
     def reset_optimiser(self):
         optimizer_scope = tf.get_collection(
