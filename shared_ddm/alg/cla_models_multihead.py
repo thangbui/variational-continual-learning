@@ -251,7 +251,9 @@ class HalfNet():
 
     def KL_term(self):
         const_term = -0.5 * self.no_weights
-        log_std_diff = 0.5 * tf.reduce_sum(tf.log(self.v0) - self.v)
+        # log_std_diff = 0.5 * tf.reduce_sum(tf.log(self.v0) - self.v)
+        # ignore log prior for now
+        log_std_diff = 0.5 * tf.reduce_sum(- self.v)
         mu_diff_term = 0.5 * tf.reduce_sum((tf.exp(self.v) + (self.m0- self.m)**2) / self.v0)
         kl = const_term + log_std_diff + mu_diff_term
         return kl
