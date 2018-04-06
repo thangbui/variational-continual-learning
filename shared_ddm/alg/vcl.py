@@ -104,8 +104,7 @@ def init_post(cav_info, init_using_cav, ml_weights=None):
         return [post_mean, post_var]
 
 def run_vcl_shared(hidden_size, no_epochs, data_gen, coreset_method, 
-            coreset_size=0, batch_size=None, no_iters=1, learning_rate=0.005, 
-            init_using_cav=False):
+            coreset_size=0, batch_size=None, no_iters=1, learning_rate=0.005):
     in_dim, out_dim = data_gen.get_dims()
     x_coresets, y_coresets = [], []
     x_testsets, y_testsets = [], []
@@ -159,22 +158,31 @@ def run_vcl_shared(hidden_size, no_epochs, data_gen, coreset_method,
             lower_n = [lower_cav[2], lower_cav[3]]
             upper_n = [upper_cav[2][0], upper_cav[3][0]]
             if task_id == 0 and i == 0:
-                # train a network using maximum likelihood
+                ## different init here, use one but it seems ml solution gives
+                ## faster convergence
+
+                ## init using the maximum likeihood solution + small variances
                 ml_model.init_session(task_id, learning_rate=0.002)
                 ml_model.train(x_train, y_train, task_id, 
                     no_epochs=50, batch_size=bsize)
                 ml_lower, ml_upper = ml_model.get_weights(task_id)
-
-                lower_post = init_post(lower_mv, init_using_cav, ml_lower)
-                upper_post = init_post(upper_mv, init_using_cav, ml_upper)
-                # lower_post = init_post(lower_mv, init_using_cav)
-                # upper_post = init_post(upper_mv, init_using_cav)
-                # lower_post, upper_post = lower_mv, upper_mv
+                lower_post = init_post(lower_mv, init_using_cav=False, ml_lower)
+                upper_post = init_post(upper_mv, init_using_cav=False, ml_upper)
+                
+                # ## init using random means + small variances
+                # lower_post = init_post(lower_mv, init_using_cav=False)
+                # upper_post = init_post(upper_mv, init_using_cav=False)
+                
+                # ## init using the prior or cavity
+                # lower_post = init_post(lower_mv, init_using_cav=True)
+                # upper_post = init_post(upper_mv, init_using_cav=True)
+                
                 upper_transform = log_func
                 lower_transform = log_func
             elif i == 0:
                 # upper_post = upper_mv
-                upper_post = init_post(upper_mv, init_using_cav)
+                # upper_post = init_post(upper_mv, init_using_cav=True)
+                upper_post = init_post(upper_mv, init_using_cav=False)
                 upper_transform = log_func
                 lower_transform = ide_func
             else:
